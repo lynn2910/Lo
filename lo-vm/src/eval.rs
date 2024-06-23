@@ -1,39 +1,45 @@
-use std::collections::LinkedList;
 use std::ops::Add;
 use lo_core::ast::node::{AstNode, BinOp};
+use lo_core::module::Module;
 use lo_core::types::Type;
 use lo_core::values::Value;
 use crate::ctx::Context;
-use crate::system_calls::sys_println;
+use crate::system_calls;
 
-pub fn eval_module(list: LinkedList<AstNode>, ctx: &mut Context) {
-    let list_iter = list.into_iter();
+pub fn eval_module<'a>(module: &Module, global_ctx: &'a mut Context<'a>) {
+    let mut ctx = Context::default();
+    ctx.set_global_ctx(global_ctx);
+    
+    let list_iter = module.unscoped_instructions.iter();
     for node in list_iter {
         match node {
             AstNode::VariableDeclaration(var_name, var_node) => {
-                if ctx.variables.contains_key(&var_name) { panic!("Variable '{var_name}' is already declared") }
+                if ctx.local_variables.contains_key(var_name) { panic!("Variable '{var_name}' is already declared") }
 
-                let computed_value = eval_node(ctx, &var_node).into();
+                let computed_value = eval_node(&mut ctx, var_node).into();
                 println!("Variable declared: {var_name} = {computed_value:?}");
-                ctx.variables.insert(var_name, computed_value);
+                ctx.local_variables.insert(var_name.clone(), computed_value);
 
             },
             AstNode::FunctionCall(fn_name, args) => {
-                if ctx.is_function_system(&fn_name) {
+                if ctx.is_function_system(fn_name) {
                     println!("System function call: {fn_name}");
-                    system_function_called(
-                        fn_name.as_str(),
+                    system_calls::sys_fn_called(
+                        fn_name,
                         args.iter()
-                            .map(|a| eval_node(ctx, a).into())
+                            .map(|a| eval_node(&mut ctx, a).into())
                             .collect::<Vec<Value>>()
                     );
                 } else {
-                    unimplemented!("No function system implemented")
+                    unimplemented!("No function system implemented");
+                    // Use `module.functions`
                 }
             },
             _ => unimplemented!("AstNode unimplemented")
         }
     }
+    
+    ctx.clear_global_ctx();
 }
 
 
@@ -43,12 +49,12 @@ fn eval_node(ctx: &mut Context, node: &AstNode) -> Option<Value> {
         // TODO find a better way than a clone...
         AstNode::Value(v) => Some(v.clone()),
         AstNode::VariableCall(v_name) => {
-            if !ctx.variables.contains_key(v_name) {
+            if !ctx.local_variables.contains_key(v_name) {
                 panic!("The variable {v_name} doesn't exist")
             }
 
             // TODO also the clone problem...
-            ctx.variables.get(v_name).cloned()
+            ctx.local_variables.get(v_name).cloned()
         }
         AstNode::BinaryOp(left, op, right) => {
             let left_v:  Value = eval_node(ctx, left).into();
@@ -106,12 +112,5 @@ fn eval_node(ctx: &mut Context, node: &AstNode) -> Option<Value> {
             }
         }
         _ => unimplemented!("Unimplemented node evaluation")
-    }
-}
-
-fn system_function_called(name: &str, args: Vec<Value>){
-    match name {
-        "println" => sys_println(args),
-        _ => panic!("Unknown system function: {name}")
     }
 }
