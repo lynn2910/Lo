@@ -1,0 +1,20 @@
+[workspace]
+members = ["lo-parser","lo-core", "lo-vm"]
+resolver="2"
+
+[workspace.dependencies]
+clap = "4.5.7"
+serde = "1.0.203"
+
+[package]
+name = "lo"
+version = "0.0.1"
+edition = "2018"
+authors=["Cédric Colin <cedric.colin35@gmail.com>"]
+
+[dependencies]
+clap = { workspace = true }
+
+lo-vm     = { path = "./lo-vm" }
+lo-parser = { path = "./lo-parser" }
+lo-core   = { path = "./lo-core" }
