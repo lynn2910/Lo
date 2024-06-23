@@ -1,0 +1,10 @@
+// variable declaration
+let v = 5 + (8 - 3)
+
+// simple condition
+if (v % 2 == 0) {
+    // new block of context with a local context and a list of instructions
+    println(v + "est pair");
+} else {
+    println(v + "est pair");
+}

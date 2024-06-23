@@ -1,0 +1,16 @@
+fn fib(n){
+    if (n < 1)
+        return 0;
+    else if (1 <= n <= 2)
+        return 1;
+
+    return fib(n - 1) + fib(n - 2);
+}
+
+mod module_test {
+    const TEST = 8;
+
+    fn hello(){ println("Hello world!"); }
+    
+    fn constant_print(){ println("The constant 'TEST' is " + TEST); }
+}
